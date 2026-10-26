@@ -18,16 +18,28 @@ import uvicorn
 
 def run_tests():
     from app.main import app
-    config = uvicorn.Config(
-        app,
-        host="127.0.0.1",
-        port=8000,
-        log_level="error"
-    )
-    server = uvicorn.Server(config)
-    server_thread = threading.Thread(target=server.run, daemon=True)
-    server_thread.start()
-    time.sleep(2.0)
+    server = None
+    is_running = False
+
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:8000/api/health", timeout=1.0) as resp:
+            if resp.status == 200:
+                is_running = True
+                print("Detected active server on http://127.0.0.1:8000. Running tests against live instance...")
+    except Exception:
+        is_running = False
+
+    if not is_running:
+        config = uvicorn.Config(
+            app,
+            host="127.0.0.1",
+            port=8000,
+            log_level="error"
+        )
+        server = uvicorn.Server(config)
+        server_thread = threading.Thread(target=server.run, daemon=True)
+        server_thread.start()
+        time.sleep(2.0)
 
     try:
         # 1. Health endpoint
@@ -112,7 +124,8 @@ def run_tests():
         print(">>> ALL LIVE HTTP VERIFICATION TESTS PASSED SUCCESSFULLY! <<<")
 
     finally:
-        server.should_exit = True
+        if server:
+            server.should_exit = True
 
 if __name__ == "__main__":
     run_tests()
