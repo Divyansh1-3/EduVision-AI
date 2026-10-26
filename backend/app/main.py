@@ -5,7 +5,7 @@ EduVision AI FastAPI Application Entrypoint.
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routes import health
+from app.routes import health, study
 
 app = FastAPI(
     title="EduVision AI API",
@@ -30,6 +30,7 @@ app.add_middleware(
 
 # Register route modules
 app.include_router(health.router, prefix="/api")
+app.include_router(study.router, prefix="/api")
 
 
 @app.get("/")
@@ -39,4 +40,6 @@ async def root():
         "message": "Welcome to EduVision AI API",
         "docs_url": "/docs",
         "health_url": "/api/health",
+        "study_url": "/api/study",
+        "study_image_url": "/api/study/image",
     }

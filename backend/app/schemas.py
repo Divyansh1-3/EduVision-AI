@@ -2,8 +2,8 @@
 Pydantic schemas and data models for EduVision AI.
 """
 
-from typing import Optional
-from pydantic import BaseModel, Field
+from typing import Literal
+from pydantic import BaseModel, Field, field_validator
 
 
 class HealthResponse(BaseModel):
@@ -12,16 +12,23 @@ class HealthResponse(BaseModel):
     service: str = Field(default="eduvision-api", description="Service identifier")
 
 
-# --- Future Schemas (Placeholders for incremental expansion) ---
+class StudyRequest(BaseModel):
+    """Schema for study query requests."""
+    question: str = Field(..., description="The student's study question or topic")
+    mode: Literal["explain", "revision", "quiz"] = Field(
+        default="explain",
+        description="Study mode: explain, revision, or quiz"
+    )
 
-class StudyRequestPlaceholder(BaseModel):
-    """Placeholder schema for future visual/textual study requests."""
-    mode: str = Field(description="Study mode: explain, revision, or quiz")
-    prompt: str = Field(description="User question or text prompt")
-    image_base64: Optional[str] = Field(default=None, description="Optional base64 image data")
+    @field_validator("question")
+    @classmethod
+    def validate_question(cls, value: str) -> str:
+        if not value or not value.strip():
+            raise ValueError("Question cannot be empty or contain only whitespace.")
+        return value.strip()
 
 
-class StudyResponsePlaceholder(BaseModel):
-    """Placeholder schema for future AI response output."""
-    mode: str
-    content: str
+class StudyResponse(BaseModel):
+    """Schema for study query responses."""
+    mode: str = Field(..., description="The study mode used")
+    answer: str = Field(..., description="The AI-generated study response")

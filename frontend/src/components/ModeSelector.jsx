@@ -5,7 +5,7 @@ const STUDY_MODES = [
     id: 'explain',
     title: 'Explain',
     icon: '💡',
-    description: 'In-depth, structured conceptual explanations for complex topics and diagrams.',
+    description: 'In-depth, structured conceptual explanations with real-world examples.',
   },
   {
     id: 'revision',
@@ -17,7 +17,7 @@ const STUDY_MODES = [
     id: 'quiz',
     title: 'Quiz',
     icon: '🎯',
-    description: 'Active-recall questions with answers and hints to test your understanding.',
+    description: 'Five practice questions with a separated answer key to test comprehension.',
   },
 ];
 
@@ -25,7 +25,7 @@ const STUDY_MODES = [
  * ModeSelector component allowing the student to toggle between
  * Explain, Revision Notes, and Quiz study modes.
  */
-export default function ModeSelector({ selectedMode, onSelectMode }) {
+export default function ModeSelector({ selectedMode, onSelectMode, disabled = false }) {
   return (
     <section className="panel-card">
       <div className="panel-header">
@@ -43,7 +43,8 @@ export default function ModeSelector({ selectedMode, onSelectMode }) {
               key={mode.id}
               type="button"
               className={`mode-btn ${isActive ? 'active' : ''}`}
-              onClick={() => onSelectMode(mode.id)}
+              onClick={() => !disabled && onSelectMode(mode.id)}
+              disabled={disabled}
               role="radio"
               aria-checked={isActive}
             >

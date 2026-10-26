@@ -8,7 +8,7 @@ export default function Header() {
     <header className="header-container">
       <div className="brand-badge">
         <span className="pulse-dot"></span>
-        <span>Hackathon Prototype &bull; Incremental Build Step 1</span>
+        <span>Gemma 4 Powered &bull; Multimodal Study Assistant</span>
       </div>
       <h1 className="main-title">EduVision AI</h1>
       <p className="main-subtitle">

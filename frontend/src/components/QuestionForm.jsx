@@ -1,87 +1,162 @@
 import React, { useRef } from 'react';
 
 /**
- * QuestionForm component containing:
+ * QuestionForm component supporting:
  * - Text prompt input area
- * - Visual placeholder for image selection
- * - Action buttons
+ * - Real image upload with preview, file details, and removal
+ * - Validation for file size (<5MB) and supported formats (JPG, PNG, WEBP)
+ * - Dynamic action buttons with loading states
  */
 export default function QuestionForm({
-  prompt,
-  onPromptChange,
-  selectedFileName,
-  onFileSelect,
+  question,
+  onQuestionChange,
+  imageFile,
+  imagePreviewUrl,
+  onImageSelect,
+  loading,
+  error,
   onSubmit,
   onClear,
 }) {
   const fileInputRef = useRef(null);
 
   const handleBoxClick = () => {
-    if (fileInputRef.current) {
+    if (!loading && fileInputRef.current) {
       fileInputRef.current.click();
     }
   };
 
   const handleFileChange = (e) => {
     const file = e.target.files && e.target.files[0];
-    if (file) {
-      onFileSelect(file.name);
+    if (!file) return;
+
+    // Validate size (< 5MB)
+    const MAX_SIZE = 5 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      alert(`File size exceeds 5 MB (${(file.size / (1024 * 1024)).toFixed(2)} MB). Please select a smaller image.`);
+      e.target.value = '';
+      return;
     }
+
+    // Validate type
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      alert('Unsupported image format. Please select a JPG, PNG, or WEBP image.');
+      e.target.value = '';
+      return;
+    }
+
+    onImageSelect(file);
   };
+
+  const handleRemoveImage = (e) => {
+    e.stopPropagation();
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    onImageSelect(null);
+  };
+
+  // Submission is allowed if either an image OR a non-empty question is provided
+  const isSubmitDisabled = loading || (!question.trim() && !imageFile);
 
   return (
     <section className="panel-card">
       <div className="panel-header">
         <h2 className="panel-title">
-          <span>2. Enter Question & Diagram</span>
+          <span>2. Enter Question & Study Material</span>
         </h2>
-        <span className="panel-title-badge">Multimodal Input</span>
+        <span className="panel-title-badge">
+          {imageFile ? 'Multimodal (Image + Text)' : 'Text Query'}
+        </span>
       </div>
 
       <form onSubmit={onSubmit} className="form-group">
-        <label htmlFor="prompt-input" className="form-label">
-          What would you like to study?
+        <label htmlFor="question-input" className="form-label">
+          {imageFile
+            ? 'Question or focus area for this image (Optional)'
+            : 'What would you like to study?'}
         </label>
         <textarea
-          id="prompt-input"
+          id="question-input"
           className="textarea-input"
-          placeholder="E.g., Explain the Calvin cycle diagram, summarize key points of mitosis, or create a quiz on Ohm's Law..."
-          value={prompt}
-          onChange={(e) => onPromptChange(e.target.value)}
+          placeholder={
+            imageFile
+              ? 'E.g., What process does step B represent? Or leave empty for an overall explanation...'
+              : 'E.g., Explain the Calvin cycle step-by-step, summarize Newton\'s laws for revision, or generate a quiz on photosynthesis...'
+          }
+          value={question}
+          onChange={(e) => onQuestionChange(e.target.value)}
+          disabled={loading}
+          rows={3}
         />
 
-        <div className="form-group" style={{ marginTop: '0.5rem' }}>
-          <label className="form-label">Study Material / Diagram (Optional)</label>
-          <div
-            className="image-placeholder-box"
-            onClick={handleBoxClick}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') handleBoxClick();
-            }}
-          >
-            <span className="image-placeholder-icon">📷</span>
-            <div className="image-placeholder-title">
-              {selectedFileName ? (
-                <span className="selected-file-pill">
-                  📎 {selectedFileName}
-                </span>
-              ) : (
-                'Image Selection Placeholder — Click to browse'
-              )}
-            </div>
-            <p className="image-placeholder-hint">
-              Upload textbook pages, diagrams, or handwritten notes. (Multimodal ingestion planned for Step 2)
-            </p>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden-file-input"
-              onChange={handleFileChange}
-            />
+        {error && (
+          <div className="form-error-banner" role="alert">
+            <span>⚠️</span>
+            <span>{error}</span>
           </div>
+        )}
+
+        {/* Multimodal Image Upload Area */}
+        <div className="form-group" style={{ marginTop: '0.5rem' }}>
+          <div className="label-with-badge">
+            <label className="form-label">Study Diagram / Photo</label>
+            <span className="active-feature-pill">JPG, PNG, WEBP (Max 5 MB)</span>
+          </div>
+
+          {!imageFile ? (
+            <div
+              className="image-placeholder-box interactive"
+              onClick={handleBoxClick}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') handleBoxClick();
+              }}
+            >
+              <span className="image-placeholder-icon">📷</span>
+              <div className="image-placeholder-title">
+                Click or drag an image here to upload
+              </div>
+              <p className="image-placeholder-hint">
+                Upload textbook diagrams, flowcharts, anatomical drawings, or handwritten notes.
+              </p>
+            </div>
+          ) : (
+            <div className="image-preview-container">
+              <div className="preview-image-wrapper">
+                <img
+                  src={imagePreviewUrl}
+                  alt="Study material preview"
+                  className="preview-thumbnail"
+                />
+              </div>
+              <div className="preview-info-wrapper">
+                <div className="preview-filename">{imageFile.name}</div>
+                <div className="preview-filesize">
+                  {(imageFile.size / 1024).toFixed(1)} KB &bull; {imageFile.type}
+                </div>
+                <button
+                  type="button"
+                  className="btn-remove-image"
+                  onClick={handleRemoveImage}
+                  disabled={loading}
+                >
+                  ✕ Remove Image
+                </button>
+              </div>
+            </div>
+          )}
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+            className="hidden-file-input"
+            onChange={handleFileChange}
+            disabled={loading}
+          />
         </div>
 
         <div className="form-actions">
@@ -89,14 +164,25 @@ export default function QuestionForm({
             type="button"
             className="btn-secondary"
             onClick={onClear}
+            disabled={loading || (!question && !imageFile && !error)}
           >
             Clear
           </button>
           <button
             type="submit"
             className="btn-primary"
+            disabled={isSubmitDisabled}
           >
-            Send to AI (Skeleton)
+            {loading ? (
+              <span className="btn-loading-wrapper">
+                <span className="btn-spinner"></span>
+                <span>Gemma 4 is Analyzing...</span>
+              </span>
+            ) : imageFile ? (
+              'Analyze Image with Gemma 4'
+            ) : (
+              'Ask Gemma 4'
+            )}
           </button>
         </div>
       </form>
